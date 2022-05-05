@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atlxw.community.dao.AnswerDao">
+    <insert id="insertNewAnswer">
+        insert into answer(which_question, answerer, content, answer_time, last_update_time, browse_count)
+        values(#{which_question}, #{answerer}, #{content}, #{answer_time}, #{last_update_time}, #{browse_count});
+    </insert>
+    <update id="beBrowsed">
+        update answer set browse_count = browse_count + 1 where id = #{answererId};
+    </update>
+    <update id="updateAnswer">
+        update answer set content = #{newContent} where id = #{editId};
+    </update>
+<!--    删除该回答的评论的点赞或踩
+        删除该回答的评论
+        删除该回答的收藏
+        删除该回答的点赞或踩
+        删除该回答-->
+    <delete id="deleteAnswerAndAssociations">
+        delete from agreeornot where evaluate_type = 4 and to_evaluate in
+        (select id from comment where to_comment_type = 0 and to_comment = #{answerId});
+
+        delete from comment where to_comment_type = 0 and to_comment = #{answerId};
+
+        delete from collection where collection_type = 0 and collection_id = #{answerId};
+
+        delete from agreeornot where evaluate_type = 0 and to_evaluate = #{answerId};
+
+        delete from answer where id = #{answerId};
+    </delete>
+
+    <select id="getAllAnswerContent" resultType="java.lang.String">
+        select content from answer;
+    </select>
+    <select id="getCollectionCount" resultType="java.lang.Integer">
+        select count(*) from collection where collection_type = 0 and collection_id = #{answer_id};
+    </select>
+    <select id="getDislikeCount" resultType="java.lang.Integer">
+        select count(*) from agreeornot where evaluate_type = 0 and agreeornot = 0 and to_evaluate = #{answer_id};
+    </select>
+    <select id="getLikeCount" resultType="java.lang.Integer">
+        select count(*) from agreeornot where evaluate_type = 0 and agreeornot = 1 and to_evaluate = #{answer_id};
+    </select>
+    <select id="getAnswerCountByUserId" resultType="java.lang.Integer">
+        select count(*) from answer where answerer = #{userId};
+    </select>
+    <select id="getAnswerById" resultType="com.atlxw.community.entity.Answer">
+        select * from answer where id = #{to_comment};
+    </select>
+
+    <select id="getSomeAnswerNew" resultType="com.atlxw.community.entity.Answer">
+        select * from answer where which_question = #{which_question}
+        order by answer_time desc limit #{start}, #{count};
+    </select>
+    <select id="getAllAnswerCountOf" resultType="java.lang.Integer">
+        select count(*) from answer where which_question = #{which_question};
+    </select>
+    <select id="getSomeAnswerPopular" resultType="com.atlxw.community.entity.Answer">
+        select * from answer where which_question = #{which_question}
+        order by browse_count desc limit #{start}, #{count};
+    </select>
+    <select id="getAnswererOf" resultType="com.atlxw.community.entity.User">
+        select id, nickname, head_photo_url from user where id in (select answerer from answer where id = #{answerId});
+    </select>
+    <select id="getCommentCount" resultType="java.lang.Integer">
+        select count(*) from comment where to_comment_type = 0 and to_comment = #{answerId};
+    </select>
+    <select id="getQuestionTitleByAnswerId" resultType="java.lang.String">
+        select title from question where id = (select which_question from answer where id = #{answerId});
+    </select>
+    <select id="getQuestionAnswerCountByAnswerId" resultType="java.lang.Integer">
+        select count(*) from answer where which_question = (select which_question from answer where id = #{answerId})
+    </select>
+    <select id="getAnswersWriteBy" resultType="com.atlxw.community.entity.Answer">
+        select id, content, which_question, answer_time, last_update_time from answer
+        where answerer = #{answerer};
+    </select>
+    <select id="getAnswererNicknameByAnswerId" resultType="java.lang.String">
+        select nickname from user
+        where id in (select commentator from comment where to_comment_type = 0 and to_comment = #{to_comment});
+    </select>
+    <select id="getAnswersCollectedBy" resultType="com.atlxw.community.entity.Answer">
+        select a.id, a.content, a.which_question, a.answer_time, a.last_update_time from answer a
+        join collection c
+        on a.id = c.collection_id
+        where c.collection_type = 0 and c.collector = #{collector}
+    </select>
+
+    <resultMap id="searchAnswerResultMap" type="java.util.HashMap">
+        <id property="id" javaType="java.lang.Integer" jdbcType="INTEGER" column="id" />
+        <result property="type" javaType="java.lang.String" jdbcType="VARCHAR" column="type" />
+        <result property="which_question" javaType="java.lang.Integer" jdbcType="INTEGER" column="which_question" />
+        <result property="answerer" javaType="java.lang.Integer" jdbcType="INTEGER" column="answerer" />
+        <result property="content" javaType="java.lang.String" jdbcType="VARCHAR" column="content" />
+        <result property="answer_time" javaType="java.sql.Timestamp" jdbcType="TIMESTAMP" column="answer_time" />
+        <result property="last_update_time" javaType="java.sql.Timestamp" jdbcType="TIMESTAMP" column="last_update" />
+        <result property="browse_count" javaType="java.lang.Integer" jdbcType="INTEGER" column="browse_count" />
+        <result property="score" javaType="java.lang.Double" jdbcType="DOUBLE" column="score" />
+    </resultMap>
+
+    <select id="searchAnswerInNaturalLanguageMode" resultMap="searchAnswerResultMap">
+        SELECT id, 'answer' as type, which_question, answerer, content, answer_time, last_update_time, browse_count,
+            MATCH(content) AGAINST(#{q}) as score
+        FROM answer
+        HAVING score > 0
+        ORDER BY score DESC
+    </select>
+
+
+</mapper>

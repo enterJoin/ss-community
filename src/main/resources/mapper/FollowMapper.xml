@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atlxw.community.dao.FollowDao">
+    <insert id="follow">
+        insert into follow(to_follow, follower) values(#{to_follow}, #{follower});
+    </insert>
+    <delete id="cancel">
+        delete from follow where to_follow = #{to_follow} and follower = #{follower};
+    </delete>
+
+    <select id="isAlreadyFollow" resultType="java.lang.Integer">
+        select count(*) from follow where to_follow = #{to_follow} and follower = #{follower};
+    </select>
+    <select id="getFollowerCount" resultType="java.lang.Integer">
+        select count(*) from follow where to_follow = #{authorId};
+    </select>
+    <select id="getFollowsOf" resultType="com.atlxw.community.entity.User">
+        select u.id, u.nickname, u.head_photo_url from user u
+        join follow f
+        on u.id = f.to_follow
+        where f.follower = #{follower};
+    </select>
+    <select id="getFollowersOf" resultType="com.atlxw.community.entity.User">
+        select u.id, u.nickname, u.head_photo_url from user u
+        join follow f
+        on u.id = f.follower
+        where f.to_follow = #{to_follow};
+    </select>
+</mapper>

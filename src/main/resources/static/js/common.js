@@ -24,7 +24,9 @@ var tryGetUid = new Promise(function(resolve, reject) {
 		success: function(response) {
 			if (response.islogin == "true") {
 				resolve(response.uid);
-			} else reject("");
+			} else {
+				reject("");
+			}
 		},
 		error: function(response) {
 			reject("");

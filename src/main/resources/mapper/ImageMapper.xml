@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atlxw.community.dao.ImageDao">
+
+    <insert id="insertImageInfo" useGeneratedKeys="true" keyProperty="id">
+        insert into image(`name`, `path`, `url`, `uploadtime`) values(#{name}, #{path}, #{url}, #{uploadtime});
+    </insert>
+    <delete id="deleteImageInfo">
+        delete from image where id = #{id};
+    </delete>
+    <select id="getAllImage" resultType="com.atlxw.community.entity.ContentImage">
+        select * from image;
+    </select>
+</mapper>

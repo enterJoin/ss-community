@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atlxw.community.dao.UserDao">
+    <insert id="register" parameterType="com.atlxw.community.entity.User" useGeneratedKeys="true" keyProperty="id">
+        insert into user(username,
+                         encrypted_password,
+                         email,
+                         nickname,
+                         motto,
+                         head_photo_path,
+                         head_photo_url,
+                         head_photo_name,
+                         register_time,
+                         last_login_time,
+                         last_update_info_time,
+                         last_login_ip)
+                    values(#{username},
+                           #{encrypted_password},
+                           #{email},
+                           #{nickname},
+                           #{motto},
+                           #{head_photo_path},
+                           #{head_photo_url},
+                           #{head_photo_name},
+                           #{register_time},
+                           #{last_login_time},
+                           #{last_update_info_time},
+                           #{last_login_ip}
+                    )
+    </insert>
+    <update id="updateLoginInfoById">
+        update user set last_login_time = #{lastLoginTime}, last_login_ip = #{lastLoginIP} where id = #{id};
+    </update>
+    <update id="updateHeadPhotoInfo">
+        update user set head_photo_path = #{headPhotoPath},
+                        head_photo_url = #{headPhotoUrl},
+                        head_photo_name = #{headPhotoName},
+                        last_update_info_time = now()
+        where id = #{uid};
+    </update>
+    <update id="updateNickname">
+        update user set nickname = #{newNickname}, last_update_info_time = now() where id = #{id};
+    </update>
+    <update id="updateMotto">
+        update user set motto = #{newMotto}, last_update_info_time = now() where id = #{id};
+    </update>
+    <update id="updatePassword">
+        update user set encrypted_password = #{newPassword}, last_update_info_time = now() where email = #{email};
+    </update>
+
+    <select id="usernameExistsCheck" resultType="java.lang.Integer">
+        select count(*) from user where username = #{username};
+    </select>
+    <select id="nicknameExistsCheck" resultType="java.lang.Integer">
+        select count(*) from user where nickname = #{nickname}
+    </select>
+    <select id="getAutoIncrement" resultType="java.lang.Integer">
+        select max(id) from user;
+    </select>
+    <select id="emailExistsCheck" resultType="java.lang.Integer">
+        select count(*) from user where email = #{emailAddress};
+    </select>
+    <select id="loginWithEmail" resultType="com.atlxw.community.entity.User">
+        select * from user where email = #{username} and encrypted_password = #{password};
+    </select>
+    <select id="loginWithUsername" resultType="com.atlxw.community.entity.User">
+        select * from user where username = #{username} and encrypted_password = #{password};
+    </select>
+    <select id="getUser" resultType="com.atlxw.community.entity.User">
+        select * from user where id = #{id};
+    </select>
+
+    <resultMap id="searchUserResultMap" type="java.util.HashMap">
+        <id property="id" javaType="java.lang.Integer" jdbcType="INTEGER" column="id" />
+        <result property="type" javaType="java.lang.String" jdbcType="VARCHAR" column="type" />
+        <result property="username" javaType="java.lang.String" jdbcType="VARCHAR" column="username" />
+        <result property="nickname" javaType="java.lang.String" jdbcType="VARCHAR" column="nickname" />
+        <result property="motto" javaType="java.lang.String" jdbcType="VARCHAR" column="motto" />
+        <result property="head_photo_url" javaType="java.lang.String" jdbcType="VARCHAR" column="head_photo_url" />
+        <result property="score" javaType="java.lang.Double" jdbcType="DOUBLE" column="score" />
+    </resultMap>
+
+    <select id="searchUserByFollowersCount" resultMap="searchUserResultMap">
+        SELECT id, 'user' as type, username, nickname, motto, head_photo_url,
+            MATCH(username,nickname) AGAINST(#{q}) as score
+        FROM user
+        HAVING score > 0
+        ORDER BY score DESC;
+    </select>
+    <select id="findUsersLikely" resultType="com.atlxw.community.entity.User">
+        select id, head_photo_url, nickname from user
+        where (position(#{searchStr} in username) or position(#{searchStr} in nickname))
+        and id != #{uid}
+    </select>
+</mapper>

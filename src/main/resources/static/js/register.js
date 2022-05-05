@@ -32,6 +32,7 @@ $(document).ready(function() {
 					} else {
 						$("#emailsender").html("已发");
 						$("#verifycodeinput").removeAttr("disabled");
+						//$("#nextstep").removeClass("disabled");
 					}
 					$("#emailsender").removeClass("loading");
 				},
@@ -66,7 +67,7 @@ $(document).ready(function() {
 			type: "POST",
 			dataType: "json",
 			data: {
-				"verifycodeinput": $("#verifycodeinput").val()
+				"verifycodeinput": $("#verifycodeinput").val(),
 			},
 			success: function(response) {
 				//console.log(response);

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atlxw.community.dao.CommentDao">
+    <insert id="comment" useGeneratedKeys="true" keyProperty="id">
+        insert into comment(content, commentator, to_comment, to_comment_type, comment_time)
+        values(#{content}, #{commentator}, #{to_comment}, #{to_comment_type}, #{comment_time});
+    </insert>
+
+    <select id="getDislikeCount" resultType="java.lang.Integer">
+        select count(*) from agreeornot where evaluate_type = 3 and agreeornot = 0 and to_evaluate = #{comment_id};
+    </select>
+    <select id="getLikeCount" resultType="java.lang.Integer">
+        select count(*) from agreeornot where evaluate_type = 3 and agreeornot = 1 and to_evaluate = #{comment_id};
+    </select>
+    <select id="getRemainAllComments" resultType="com.atlxw.community.entity.Comment">
+        select * from comment
+        where to_comment = #{to_comment} and to_comment_type = #{to_comment_type}
+        order by comment_time desc
+        limit #{howManyToShowAtOneTime}, 9999999999
+    </select>
+    <select id="getTopComments" resultType="com.atlxw.community.entity.Comment">
+        select * from comment
+        where to_comment = #{to_comment} and to_comment_type = #{to_comment_type}
+        order by comment_time desc
+        limit #{howManyToShowAtOneTime}
+    </select>
+
+    <select id="getCommentCountOf" resultType="java.lang.Integer">
+        select count(*) from comment where to_comment = #{to_comment} and to_comment_type = #{to_comment_type};
+    </select>
+    <select id="getCommentsBy" resultType="com.atlxw.community.entity.Comment">
+        select comment_time, content, to_comment_type, to_comment from comment
+        where commentator = #{commentator};
+    </select>
+</mapper>

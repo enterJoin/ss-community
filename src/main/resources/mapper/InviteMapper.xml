@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atlxw.community.dao.InviteDao">
+    <insert id="invite" useGeneratedKeys="true" keyProperty="id">
+        insert into invite(inviter, be_invited, which_question, is_read, invite_time)
+        values(#{inviter}, #{be_invited}, #{which_question}, #{is_read}, #{invite_time});
+    </insert>
+    <update id="readInvite">
+        update invite set is_read = 1 where id = #{inviteId};
+    </update>
+
+    <select id="getSearchUsersInvitationStateOf" resultType="com.atlxw.community.entity.Invite">
+        select inviter, be_invited from invite
+        where which_question = #{questionId} and inviter = #{uid} and be_invited in
+        (select id from user where position(#{searchStr} in username) or position(#{searchStr} in nickname));
+    </select>
+    <select id="getFollowsInvitationStateOf" resultType="com.atlxw.community.entity.Invite">
+        select inviter, be_invited from invite
+        where which_question = #{questionId} and inviter = #{uid} and be_invited in
+        (select to_follow from follow where follower = #{uid});
+    </select>
+    <select id="isAlreadyInvited" resultType="java.lang.Integer">
+        select count(*) from invite where inviter = #{inviter} and be_invited = #{be_invited} and which_question = #{which_question};
+    </select>
+    <select id="getMyInvitation" resultType="com.atlxw.community.entity.Invite">
+        select * from invite where be_invited = #{be_invited};
+    </select>
+    <select id="getHowManyNotReadInvitationOf" resultType="java.lang.Integer">
+        select count(*) from invite where is_read = 0 and be_invited = #{be_invited};
+    </select>
+</mapper>

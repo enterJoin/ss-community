@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atlxw.community.dao.ArticleDao">
+
+    <insert id="insertNewArticle">
+        insert into article(title, content, author, submit_time, last_update_time, browse_count)
+        values(#{title}, #{content}, #{author}, #{submit_time}, #{last_update_time}, #{browse_count});
+    </insert>
+    <update id="beBrowsed">
+        update article set browse_count = browse_count + 1 where id = #{articleId};
+    </update>
+    <update id="updateArticle">
+        update article set title = #{newTitle}, content = #{newContent} where id = #{articleId};
+    </update>
+<!--   在文章表里面删除该文章
+       删除这篇文章相关的点赞和踩的信息
+       删除这篇文章的评论的点赞和踩的信息
+       删除这篇文章的评论的相关信息
+       删除这篇文章的收藏信息-->
+
+    <delete id="deleteArticleAndAssociations" parameterType="java.lang.Integer">
+        delete from article where id = #{articleId};
+
+        delete from agreeornot where evaluate_type = 1 and to_evaluate = #{articleId};
+
+        delete from agreeornot where evaluate_type = 3
+        and to_evaluate in (select id from comment where to_comment_type = 1 and to_comment = #{articleId});
+
+        delete from comment where to_comment_type = 1  and to_comment = #{articleId};
+
+        delete from collection where collection_type = 1 and collection_id = #{articleId};
+    </delete>
+    <select id="getAllArticleCount" resultType="java.lang.Double">
+        select count(id) from article;
+    </select>
+    <select id="getSomeArticleNew" resultType="com.atlxw.community.entity.Article">
+        select * from article order by submit_time desc limit ${start}, ${count};
+    </select>
+    <select id="getAuthorOf" resultType="com.atlxw.community.entity.User">
+        select * from user where id in (select author from article where id = #{id});
+    </select>
+    <select id="getCommentCount" resultType="java.lang.Integer">
+        select count(*) from comment where to_comment_type = 1 and to_comment = #{id};
+    </select>
+    <select id="getAllArticleContent" resultType="java.lang.String">
+        select content from article;
+    </select>
+    <select id="getCollectionCount" resultType="java.lang.Integer">
+        select count(*) from collection where collection_type = 1 and collection_id = #{article_id};
+    </select>
+    <select id="getDislikeCount" resultType="java.lang.Integer">
+        select count(*) from agreeornot where evaluate_type = 1 and agreeornot = 0 and to_evaluate = #{article_id};
+    </select>
+    <select id="getLikeCount" resultType="java.lang.Integer">
+        select count(*) from agreeornot where evaluate_type = 1 and agreeornot = 1 and to_evaluate = #{article_id};
+    </select>
+    <select id="getSomeArticlePopular" resultType="com.atlxw.community.entity.Article">
+        select * from article order by browse_count desc limit ${start},${count};
+    </select>
+    <select id="getArticleCountWriteBy" resultType="java.lang.Integer">
+        select count(*) from article where author = #{userId};
+    </select>
+    <select id="getArticleById" resultType="com.atlxw.community.entity.Article">
+        select * from article where id = #{articleId};
+    </select>
+    <select id="getArticlesWriteBy" resultType="com.atlxw.community.entity.Article">
+        select id, title, submit_time, last_update_time from article where author = #{authorId};
+    </select>
+    <select id="getAuthorNicknameByArticleId" resultType="java.lang.String">
+        select nickname from user
+        where id in (select commentator from comment where to_comment_type = 1 and to_comment = #{to_comment});
+    </select>
+    <select id="getArticlesCollectedBy" resultType="com.atlxw.community.entity.Article">
+        select a.id, a.last_update_time, a.submit_time, a.title from article a
+        join collection c
+        on a.id = c.collection_id
+        where c.collection_type = 1 and c.collector = #{collector}
+    </select>
+
+    <resultMap id="searchArticleResultMap" type="java.util.HashMap">
+        <id property="id" javaType="java.lang.Integer" jdbcType="INTEGER" column="id" />
+        <result property="type" javaType="java.lang.String" jdbcType="VARCHAR" column="type" />
+        <result property="title" javaType="java.lang.String" jdbcType="VARCHAR" column="title" />
+        <result property="content" javaType="java.lang.String" jdbcType="VARCHAR" column="content" />
+        <result property="author" javaType="java.lang.Integer" jdbcType="INTEGER" column="author" />
+        <result property="submit_time" javaType="java.sql.Timestamp" jdbcType="TIMESTAMP" column="submit_time" />
+        <result property="last_update_time" javaType="java.sql.Timestamp" jdbcType="TIMESTAMP" column="last_update" />
+        <result property="browse_count" javaType="java.lang.Integer" jdbcType="INTEGER" column="browse_count" />
+        <result property="score" javaType="java.lang.Double" jdbcType="DOUBLE" column="score" />
+    </resultMap>
+    <select id="searchArticleInNaturalLanguageMode" resultMap="searchArticleResultMap">
+        SELECT id, 'article' as type, title, content, author, submit_time, last_update_time, browse_count,
+            MATCH(title, content) AGAINST(#{q}) as score
+        FROM article
+        HAVING score > 0
+        ORDER BY score DESC
+    </select>
+
+</mapper>
